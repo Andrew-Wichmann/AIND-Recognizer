@@ -118,8 +118,6 @@ class SelectorCV(ModelSelector):
                     minL = hmm_model.logL
                     best_model = hmm_model
             except:
-                import sys
-                print(sys.exc_info()[0])
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
                 return None
