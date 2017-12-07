@@ -120,4 +120,4 @@ class SelectorCV(ModelSelector):
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
                 return None
-        return b
+        return best_model
