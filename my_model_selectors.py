@@ -76,7 +76,7 @@ class SelectorBIC(ModelSelector):
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        min_bic = -float('inf')
+        min_bic = float('inf')
         best_model = None
         for n_hidden in range(self.min_n_components, self.max_n_components+1):
             try:
