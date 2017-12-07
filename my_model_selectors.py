@@ -78,8 +78,8 @@ class SelectorBIC(ModelSelector):
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection based on BIC scores
-        raise NotImplementedError
+        # # TODO implement model selection based on BIC scores
+        # raise NotImplementedError
 
 
 class SelectorDIC(ModelSelector):
@@ -95,8 +95,8 @@ class SelectorDIC(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection based on DIC scores
-        raise NotImplementedError
+        # # TODO implement model selection based on DIC scores
+        # raise NotImplementedError
 
 
 class SelectorCV(ModelSelector):
@@ -112,7 +112,7 @@ class SelectorCV(ModelSelector):
         for n_hidden in range(self.min_n_components, self.max_n_components+1):
             try:
                 hmm_model = GaussianHMM(n_components=n_hidden, covariance_type="diag", n_iter=1000,
-                                        random_state=self.random_state, verbose=False).fit(self.X, self.lengths)
+                                        random_state=self.random_state, verbose=self.verbose).fit(self.X, self.lengths)
                 if hmm_model.logL < minL:
                     minL = hmm_model.logL
                     best_model = hmm_model
@@ -120,4 +120,4 @@ class SelectorCV(ModelSelector):
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
                 return None
-        return best_model
+        return b
