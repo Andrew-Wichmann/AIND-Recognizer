@@ -113,7 +113,8 @@ class SelectorCV(ModelSelector):
             try:
                 hmm_model = GaussianHMM(n_components=n_hidden, covariance_type="diag", n_iter=1000,
                                         random_state=self.random_state, verbose=self.verbose).fit(self.X, self.lengths)
-                if hmm_model.logL < minL:
+                logL = hmm_model(self.X, self.lengths)
+                if logL < minL:
                     minL = hmm_model.logL
                     best_model = hmm_model
             except:
