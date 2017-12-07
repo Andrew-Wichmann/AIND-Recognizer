@@ -23,8 +23,6 @@ class ModelSelector(object):
         self.X, self.lengths = all_word_Xlengths[this_word]
         self.this_word = this_word
         self.n_constant = n_constant
-        if min_n_components > max_n_components:
-            raise ValueError("You bozo!")
         self.min_n_components = min_n_components
         self.max_n_components = max_n_components
         self.random_state = random_state
@@ -113,11 +111,13 @@ class SelectorCV(ModelSelector):
             try:
                 hmm_model = GaussianHMM(n_components=n_hidden, covariance_type="diag", n_iter=1000,
                                         random_state=self.random_state, verbose=self.verbose).fit(self.X, self.lengths)
-                logL = hmm_model(self.X, self.lengths)
+                logL = hmm_model.score(self.X, self.lengths)
                 if logL < minL:
-                    minL = hmm_model.logL
+                    minL = logL
                     best_model = hmm_model
             except:
+                import sys
+                print(sys.exc_info())
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
                 return None
