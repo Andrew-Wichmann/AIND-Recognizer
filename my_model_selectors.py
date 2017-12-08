@@ -19,6 +19,7 @@ class ModelSelector(object):
                  random_state=14, verbose=False):
         self.words = all_word_sequences
         self.hwords = all_word_Xlengths
+        self.num_of_features = len(self.hwords['JOHN'][0][0])
         self.sequences = all_word_sequences[this_word]
         self.X, self.lengths = all_word_Xlengths[this_word]
         self.this_word = this_word
@@ -34,7 +35,7 @@ class ModelSelector(object):
     def base_model(self, num_states):
         # with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        # warnings.filterwarnings("ignore", category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
         try:
             hmm_model = GaussianHMM(n_components=num_states, covariance_type="diag", n_iter=1000,
                                     random_state=self.random_state, verbose=False).fit(self.X, self.lengths)
@@ -75,7 +76,7 @@ class SelectorBIC(ModelSelector):
         :return: GaussianHMM object
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+        # warnings.filterwarnings("ignore", category=RuntimeWarning)
         min_bic = float('inf')
         best_model = None
         for n_hidden in range(self.min_n_components, self.max_n_components+1):
@@ -83,18 +84,16 @@ class SelectorBIC(ModelSelector):
                 hmm_model = GaussianHMM(n_components=n_hidden, covariance_type="diag", n_iter=1000,
                                         random_state=self.random_state, verbose=self.verbose).fit(self.X, self.lengths)
                 logL = hmm_model.score(self.X, self.lengths)
-                p = n_hidden
-                logN = math.log(len(self.lengths))
+                logN = math.log(len(self.X))
+                p = n_hidden**2 + (2 * n_hidden * self.num_of_features) - 1
                 bic = -2 * logL + p * logN
                 if bic < min_bic:
                     min_bic = bic
                     best_model = hmm_model
             except:
-                import sys
-                print(sys.exc_info())
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
-                return None
+                return best_model
         return best_model
 
 
@@ -110,10 +109,38 @@ class SelectorDIC(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-        # # TODO implement model selection based on DIC scores
-        # raise NotImplementedError
+        max_dic = float('-inf')
+        best_model = None
+        for n_hidden in range(self.min_n_components, self.max_n_components+1):
+            
+            # Stop the search if we can't build a more complex model.
+            # I think this is due to a lack data of training data for some words(signals) like "FISH"
+            try:
+                hmm_model = GaussianHMM(n_components=n_hidden, covariance_type="diag", n_iter=1000,
+                                    random_state=self.random_state, verbose=self.verbose).fit(self.X, self.lengths) 
 
+            
+                # Sum the score of the model for all words other than the one we are interested in
+                # Subtract the average of the other scores from the score for the model we are interested in
+                anti_evidence_sum = 0
+                for word in self.words:
+                    if word != self.this_word:
+                        anti_evidence_sum += hmm_model.score(self.hwords[word][0], self.hwords[word][1])
+                    else:  
+                        evidence = hmm_model.score(self.X, self.lengths)
+            except:
+                if self.verbose:
+                    print("Failure on {} with {} states.".format(self.this_word, n_hidden))
+                return best_model
+
+            anti_evidence_mean = (anti_evidence_sum/ len(self.words)-1)
+            dic = evidence - anti_evidence_mean
+            if dic > max_dic:
+                max_dic = dic
+                best_model = hmm_model
+        return best_model
 
 class SelectorCV(ModelSelector):
     ''' select best model based on average log Likelihood of cross-validation folds
@@ -122,8 +149,9 @@ class SelectorCV(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-        maxL = -float('inf')
+        maxL = float('-inf')
         best_model = None
         for n_hidden in range(self.min_n_components, self.max_n_components+1):
             try:
@@ -134,9 +162,6 @@ class SelectorCV(ModelSelector):
                     maxL = logL
                     best_model = hmm_model
             except:
-                import sys
-                print(sys.exc_info())
                 if self.verbose:
                     print("Failure on {} with {} states.".format(self.this_word, n_hidden))
-                return None
         return best_model
